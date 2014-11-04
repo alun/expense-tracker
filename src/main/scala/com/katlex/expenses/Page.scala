@@ -1,3 +1,5 @@
+package com.katlex.expenses
+
 
 import scala.io.Source
 import unfiltered.response._
@@ -9,9 +11,6 @@ import java.net.URL
 object Page {
 
   def assets = new URL(getClass.getResource("/www/robots.txt"), ".")
-
-  Source.fromInputStream(
-    getClass.getResource("/").openStream()).getLines().foreach(println)
 
   def apply(title: String)(styles: xml.NodeSeq)(
     scripts: xml.NodeSeq)(
