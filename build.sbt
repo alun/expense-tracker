@@ -18,12 +18,17 @@ Revolver.settings
 
 resourceGenerators in Compile <+= SassKeys.sass in Compile
 
-libraryDependencies ++= Seq(
-  "net.databinder" %% "unfiltered-jetty" % "0.8.2",
-  "net.databinder" %% "unfiltered-filter" % "0.8.2",
-  "com.typesafe.slick" %% "slick" % "2.1.0",
-  "org.slf4j" % "slf4j-nop" % "1.6.4",
-  "com.h2database" % "h2" % "1.4.182" % "runtime",
-  "org.mongodb" % "mongo-java-driver" % "2.12.4"
-)
+libraryDependencies ++= {
+  val unfilteredVersion = "0.8.2"
+  val liftVersion = "2.6-RC1"
+  Seq(
+    "ch.qos.logback" % "logback-classic"     % "1.0.6",
+    "net.liftweb"    %% "lift-util"          % liftVersion,
+    "net.databinder" %% "unfiltered-jetty" % unfilteredVersion,
+    "net.databinder" %% "unfiltered-filter" % unfilteredVersion,
+    "com.typesafe.slick" %% "slick" % "2.1.0",
+    "com.h2database" % "h2" % "1.4.182" % "runtime",
+    "org.mongodb" % "mongo-java-driver" % "2.12.4"
+  )
+}
 

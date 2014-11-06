@@ -13,6 +13,8 @@ package object data {
     { id => id.toString },
     { str => new ObjectId(str) }
   )
+  
+  case class User(id:ObjectId, email:String, password:String)
 
   class Users(tag: Tag) extends Table[(ObjectId, String, String)](tag, "USERS") {
     def id = column[ObjectId]("USER_ID", O.PrimaryKey)
@@ -34,10 +36,10 @@ package object data {
   }
 
   def user(email:String) = base withSession { implicit  session =>
-    users.filter(_.email === email).list match {
+    (users.filter(_.email === email).list match {
       case user :: _ => Some(user)
       case _ => None
-    }
+    }).map(User.tupled)
   }
 
   def password(email:String, password:String) = {

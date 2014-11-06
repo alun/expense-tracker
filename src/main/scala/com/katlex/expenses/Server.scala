@@ -15,10 +15,7 @@ object Server {
     Http(8080).context("/assets") {
       _.resources(Page.assets)
     }.filter(unfiltered.filter.Planify {
-      case Path("/") => Page("Hello")(Nil)(Nil)(
-        <h1>
-        <div>Hello world</div>
-        </h1>)
+      case Path("/") => Page("Expenses tracker")
     }).run
   }
 }

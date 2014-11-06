@@ -1,33 +1,26 @@
 package com.katlex.expenses
 
-
-import scala.io.Source
-import unfiltered.response._
-
-import scala.xml
-
 import java.net.URL
+
+import net.liftweb.util.Html5
+import net.liftweb.util.BindHelpers._
 
 object Page {
 
   def assets = new URL(getClass.getResource("/www/robots.txt"), ".")
+  
+  def htmlResource(name:String*) = {
+    Html5.parse(
+      getClass.getResource(s"/html/${name.mkString("/")}.html").openStream()
+    ).openOrThrowException("Bad source html!")
+  }
+  
+  lazy val defaultFrame = htmlResource("default")
 
-  def apply(title: String)(styles: xml.NodeSeq)(
-    scripts: xml.NodeSeq)(
-    content: xml.NodeSeq) = Html(
-    <html>
-      <head>
-        <title>{ title }</title>
-        <link rel="stylesheet" type="text/css" href="/assets/css/sass/app.css" />
-        { styles }
-      </head>
-      <body>
-        <div id="container">
-        { content }
-        </div>
-       <script type="text/javascript" src="/assets/js/app.js"></script>{
-         scripts
-      }</body>
-    </html>
-  )
+  def apply(title:String) = unfiltered.response.Html5 {
+    val transform = 
+      "title *" #> title
+    
+    transform(defaultFrame)
+  }
 }
