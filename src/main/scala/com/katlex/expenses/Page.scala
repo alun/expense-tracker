@@ -1,11 +1,24 @@
 package com.katlex.expenses
 
+import java.io.OutputStreamWriter
 import java.net.URL
 
 import net.liftweb.util.Html5
 import net.liftweb.util.BindHelpers._
+import unfiltered.response.{ResponseWriter, HtmlContent, ComposeResponse}
 
 object Page {
+  
+  case class Response(nodes: scala.xml.NodeSeq) extends ComposeResponse(HtmlContent ~> new ResponseWriter {
+    def write(w: OutputStreamWriter) {
+      val html = nodes.head match {
+        case <html>{_*}</html> => nodes.head
+        case _ => <html>{nodes}</html>
+      }
+      
+      Html5.write(html, w, true, false);
+    }
+  })
 
   def assets = new URL(getClass.getResource("/www/robots.txt"), ".")
   
@@ -15,9 +28,10 @@ object Page {
     ).openOrThrowException("Bad source html!")
   }
   
-  lazy val defaultFrame = htmlResource("default")
+  //lazy val defaultFrame = htmlResource("default")
+  def defaultFrame = htmlResource("default")
 
-  def apply(title:String) = unfiltered.response.Html5 {
+  def apply(title:String) = Response {
     val transform = 
       "title *" #> title
     

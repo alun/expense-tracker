@@ -18,6 +18,8 @@ Revolver.settings
 
 resourceGenerators in Compile <+= SassKeys.sass in Compile
 
+CoffeeKeys.bare in (Compile, CoffeeKeys.coffee) := true // development purposes only
+
 libraryDependencies ++= {
   val unfilteredVersion = "0.8.2"
   val liftVersion = "2.6-RC1"

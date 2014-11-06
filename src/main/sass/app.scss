@@ -48,3 +48,8 @@
 // Utility classes
 @import "bootstrap/utilities";
 @import "bootstrap/responsive-utilities";
+
+body {
+  padding-top: 3em;
+  min-width: 500px;
+}

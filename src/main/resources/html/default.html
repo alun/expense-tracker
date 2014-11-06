@@ -2,11 +2,38 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="/assets/css/sass/app.css" />
     <title></title>
+    <script type="text/javascript" src="/assets/js/angular.js"></script>
 </head>
-<body>
-    <div id="container"></div>
+<body ng-scope>
+    <div class="container" ng-cloak class="ng-cloak" ng-init="view='welcome-screen'">
+        <div class="jumbotron" ng-show="view=='welcome-screen'">
+            <h1>Welcome to expenses tracker!</h1>
+            <p>You need to register to use it</p>
+            <p>Please login or register using buttons below</p>
+            <p>{{ 1000.399955 | currency }}</p>
+            <p><a class="btn btn-primary btn-lg" href="#" role="button"
+                  ng-click="view='login'">Login</a>
+               <a class="btn btn-primary btn-lg" href="#" role="button">Register</a></p>
+        </div>
+        <div class="col-md-12 row" ng-show="view=='login'">
+            <div class="col-md-4 col-md-offset-4 col-xs-6 col-xs-offset-3">
+                <form class="form-signin" login-form>
+                    <h2 class="form-signin-heading">Please login</h2>
+                    <input type="text" class="form-control" name="username" placeholder="Email Address" required="" autofocus="" />
+                    <input type="password" class="form-control" name="password" placeholder="Password" required=""/>
+                    <label class="checkbox">
+                        <input type="checkbox" value="remember-me" id="rememberMe" name="rememberMe"> Remember me
+                    </label>
+                    <button class="col-xs-6 btn btn-lg btn-primary" type="submit">Login</button>
+                    <a class="col-xs-6 btn btn-lg btn-primary" ng-click="view='welcome-screen'">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/assets/js/angular-resource.js"></script>
     <script type="text/javascript" src="/assets/js/app.js"></script>
 </body>
 </html>
