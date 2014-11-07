@@ -13,7 +13,6 @@
             <h1>Welcome to expenses tracker!</h1>
             <p>You need to register to use it</p>
             <p>Please login or register using buttons below</p>
-            <p>{{ 1000.399955 | currency }}</p>
             <p><a class="btn btn-primary btn-lg" href="#" role="button"
                   ng-click="view='login'">Login</a>
                <a class="btn btn-primary btn-lg" href="#" role="button">Register</a></p>
@@ -24,11 +23,10 @@
                     <h2 class="form-signin-heading">Please login</h2>
                     <input type="text" class="form-control" name="username" placeholder="Email Address" required="" autofocus="" />
                     <input type="password" class="form-control" name="password" placeholder="Password" required=""/>
-                    <label class="checkbox">
-                        <input type="checkbox" value="remember-me" id="rememberMe" name="rememberMe"> Remember me
-                    </label>
-                    <button class="col-xs-6 btn btn-lg btn-primary" type="submit">Login</button>
-                    <a class="col-xs-6 btn btn-lg btn-primary" ng-click="view='welcome-screen'">Cancel</a>
+                    <div class="btn-group col-xs-12">
+                        <button class="col-xs-6 btn btn-lg btn-primary" type="submit">Login</button>
+                        <a class="col-xs-6 btn btn-lg btn-primary" ng-click="view='welcome-screen'">Cancel</a>
+                    </div>
                 </form>
             </div>
         </div>
