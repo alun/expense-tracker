@@ -43,10 +43,35 @@
         </div>
         <div class="col-md-12 row" ng-show="user"
              ng-controller="expensesController">
-            <div class="pull-right">Hello, {{user.email}}
-                <a class="btn btn-sm btn-primary"
-                   ng-click="logout()" ng-disable="dataFlow">Logout</a>
+            <div class="clearfix expenses-head">
+                <div class="pull-right">Hello, {{user.email}}
+                    <a class="btn btn-sm btn-primary"
+                       ng-click="logout()" ng-disable="dataFlow">Logout</a>
+                </div>
+                <div class="pull-left">
+                    <a class="btn btn-sm btn-primary">Weekly report</a>
+                </div>
+                <div class="pull-left col-xs-8">
+                    <input type="text" class="form-control"
+                           placeholder="Search expenses">
+                </div>
             </div>
+            <table class="table col-md-12" ng-show="expenses">
+                <thead>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Amount</th>
+                    <th>Comment</th>
+                    <th>Description</th>
+                </thead>
+                <tr ng-repeat="e in expenses">
+                    <td>{{e.timestamp | date}}</td>
+                    <td>{{e.timestamp | date:'shortTime'}}</td>
+                    <td>{{e.amount | currency}}</td>
+                    <td>{{e.comment}}</td>
+                    <td>{{e.description}}</td>
+                </tr>
+            </table>
         </div>
     </div>
     <div id="user"></div>

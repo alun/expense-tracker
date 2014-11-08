@@ -7,6 +7,8 @@ import org.bson.types.ObjectId
 
 package object data {
 
+  import Model._
+
   def nextId = ObjectId.get()
   def now = new java.util.Date
 
@@ -18,42 +20,15 @@ package object data {
     { str => new ObjectId(str) }
   )
   
-  case class User(id:ObjectId, email:String, password:String)
-  case class Session(id:ObjectId, ownerId:ObjectId, timestamp:Long)
-
-  class Users(tag: Tag) extends Table[User](tag, "USERS") {
-    def id = column[ObjectId]("USER_ID", O.PrimaryKey)
-    def email = column[String]("EMAIL")
-    def password =  column[String]("PASSWD")
-    def * = (id, email, password) <> (User.tupled, User.unapply)
-  }
-  val users = TableQuery[Users]
-
-  class Sessions(tag:Tag) extends Table[Session](tag, "SESSIONS") {
-    def id = column[ObjectId]("SESSION_ID", O.PrimaryKey)
-    def ownerId = column[ObjectId]("USER_ID")
-    def lastTouched = column[Long]("LAST_TOUCHED")
-
-    def ownerFk = foreignKey("USER_FK", ownerId, users)(
-      _.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-
-    def ownerIdx = index("USER_IDX", ownerId, unique = true)
-
-    def * = (id, ownerId, lastTouched) <> (Session.tupled, Session.unapply)
-  }
-  val sessions = TableQuery[Sessions]
-
   /**
-   * Optionaly creates db schema if it hasn't been created yet
+   * Optionally creates db schema if it hasn't been created yet
    */
   def createSchemaOpt() {
     db withSession { implicit dbSession =>
       try {
         users.ddl.create
         sessions.ddl.create
-
-        // test data
-        users += User(nextId, "alun@katlex.com", "5236e55bf84d77acf0f9c2aef5751903")
+        expenses.ddl.create
       } catch {
         case e:SQLException => // probably database was already created
       }
@@ -138,14 +113,24 @@ package object data {
     } yield u).list.headOption
   }
 
+  def getExpenses(user:User, skip:Int = 0, limit:Int = 10, filter:Option[String] = None) =
+    db.withSession { implicit dbSession =>
+      val query = filter.map(v => s"%$v%").map { v =>
+        (for {
+          e <- expenses if (e.description like v) || (e.comment like v)
+        } yield e)
+      } .getOrElse(expenses)
+      query.drop(skip).take(limit).list
+    }
+
   /**
    * Creates an MD5 hash of the password using the email as a salt
    * @param email
    * @param password
    * @return MD5 hash string
    */
-  def password(email:String, password:String) = {
-    def hex(v:Byte) = {
+  def password(email: String, password: String) = {
+    def hex(v: Byte) = {
       val s = Integer.toHexString(v.toInt & 0xFF)
       if (s.length == 1)
         "0" + s

@@ -7,10 +7,9 @@ import net.liftweb.util.Html5
 import net.liftweb.util.BindHelpers._
 import unfiltered.response.{ResponseWriter, HtmlContent, ComposeResponse}
 import unfiltered.filter.Plan.Intent
-import unfiltered.request.{Cookies, Path}
-import com.katlex.expenses.sessions.SessionManager
-import unfiltered.Cookie
+import unfiltered.request.Path
 import com.katlex.expenses.data.Serializer
+import com.katlex.expenses.data.Model.User
 
 object Page {
   
@@ -27,8 +26,7 @@ object Page {
 
   def intent:Intent = {
     case req @ (Path("/") | Path("/index") | Path("/index.html")) =>
-      val cookies = Cookies.unapply(req).get
-      Page("Expenses tracker", cookies.get(SessionManager.COOKIE).flatMap(x => x))
+      Page("Expenses tracker", Util.sessionUser(req))
   }
 
   def assets = new URL(getClass.getResource("/www/robots.txt"), ".")
@@ -42,10 +40,10 @@ object Page {
   //lazy val defaultFrame = htmlResource("default")
   def defaultFrame = htmlResource("default")
 
-  def apply(title:String, sid:Option[Cookie]) = Response {
+  def apply(title:String, user:Option[User]) = Response {
     val transform = 
       "title *" #> title &
-      "#user [ng-init]" #> sid.flatMap(c => SessionManager.getUser(c.value)).map { user =>
+      "#user [ng-init]" #> user.map { user =>
         "user = " + Serializer.toJsonString(user)
       }
     

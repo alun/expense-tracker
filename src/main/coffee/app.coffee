@@ -8,16 +8,9 @@ body = document.body.cloneNode(true)
   capitalize = (s) ->
     s[0].toUpperCase() + s.split('').slice(1).join('')
 
-  ###
-  app.factory "userApi", ['$resource', (resource) ->
-    resource "/api/users/:id/:verb",
-        id: '@username'
-      ,
-        login:
-          method: 'POST'
-          params: verb: 'login'
+  app.factory "expensesApi", ['$resource', (resource) ->
+    resource "/api/users/:userId/expenses/:id"
   ]
-  ###
 
   clearForm = (scope) ->
     scope.form.$setPristine()
@@ -48,14 +41,23 @@ body = document.body.cloneNode(true)
               scope.errorMessage = data.code
   ]
 
-  app.controller 'expensesController', ['$scope', '$http', (scope, http) ->
-    scope.logout = ->
-      scope.dataFlow = true
-      http.post("/api/users/#{scope.user.id}/logout", "")
-        .success (data, status, headers, config) ->
-          scope.dataFlow = false
-          scope.$root.user = null
-  ]
+  app.controller 'expensesController',
+    ['$scope', '$http', 'expensesApi', (scope, http, expensesApi) ->
+
+      scope.$watch "user", (user) ->
+        if user?
+          expensesApi.query
+            userId: user.id
+            , (data) -> scope.expenses = data
+
+
+      scope.logout = ->
+        scope.dataFlow = true
+        http.post("/api/users/#{scope.user.id}/logout", "")
+          .success (data, status, headers, config) ->
+            scope.dataFlow = false
+            scope.$root.user = null
+    ]
 
   app.directive 'clearForm', ['$http', (http) ->
     (scope, element, attrs) ->

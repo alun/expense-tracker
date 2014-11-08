@@ -1,0 +1,32 @@
+#!/bin/bash
+
+COOKIES=`mktemp`
+
+TRACE_CMD=${1:-0}
+
+CMD="curl -c $COOKIES -b $COOKIES"
+API_BASE=http://localhost:8080/api
+
+function test {
+    echo
+    echo $1
+    if [ $TRACE_CMD -eq 1 ] ; then
+        echo $2
+    fi
+    eval $2
+    echo 
+}
+
+test "Login" \
+"$CMD -d '{\"password\": \"qwerqwer\"}' $API_BASE/users/alun@katlex.com/login"
+
+test "Get expenses" \
+"$CMD -G -d '{}' $API_BASE/users/545ba0b14c96c6cfb62876cf/expenses"
+
+test "Get expenses (other user)" \
+"$CMD -G -d '{}' $API_BASE/users/555ba0b14c96c6cfb62876cf/expenses"
+
+rm "$COOKIES"
+
+test "Get expenses (no session)" \
+"$CMD -G -d '{}' $API_BASE/users/545ba0b14c96c6cfb62876cf/expenses"

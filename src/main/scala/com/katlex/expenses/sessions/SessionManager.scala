@@ -1,7 +1,7 @@
 package com.katlex.expenses
 package sessions
 
-import com.katlex.expenses.data.User
+import com.katlex.expenses.data.Model.User
 
 object SessionManager {
 
