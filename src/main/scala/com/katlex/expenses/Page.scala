@@ -6,6 +6,8 @@ import java.net.URL
 import net.liftweb.util.Html5
 import net.liftweb.util.BindHelpers._
 import unfiltered.response.{ResponseWriter, HtmlContent, ComposeResponse}
+import unfiltered.filter.Plan.Intent
+import unfiltered.request.Path
 
 object Page {
   
@@ -19,6 +21,10 @@ object Page {
       Html5.write(html, w, true, false);
     }
   })
+
+  def intent:Intent = {
+    case Path("/") => Page("Expenses tracker")
+  }
 
   def assets = new URL(getClass.getResource("/www/robots.txt"), ".")
   

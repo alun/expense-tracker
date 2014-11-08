@@ -35,7 +35,7 @@ package object data {
     }
   }
 
-  def user(email:String) = base withSession { implicit  session =>
+  def user(email:String):Option[User] = base withSession { implicit  session =>
     (users.filter(_.email === email).list match {
       case user :: _ => Some(user)
       case _ => None

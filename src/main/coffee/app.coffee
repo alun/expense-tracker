@@ -5,18 +5,7 @@ body = document.body.cloneNode(true)
 
   app = angular.module 'expenses', ['ngResource']
 
-  serialize = (form) ->
-    i = 0
-    res = {}
-    while field = form[i++]
-      v = null
-      if ['text', 'password'].indexOf(field.type) != -1
-        v = field.value
-      else if field.type == 'checkbox'
-        v = field.checked
-      res[field.name] = v if v?
-    res
-
+  ###
   app.factory "userApi", ['$resource', (resource) ->
     resource "/api/users/:id/:verb",
         id: '@username'
@@ -25,12 +14,38 @@ body = document.body.cloneNode(true)
           method: 'POST'
           params: verb: 'login'
   ]
+  ###
 
-  app.directive 'loginForm', ['userApi', (api) ->
+  clearForm = (scope) ->
+    scope.form.$setPristine()
+    delete scope.errorMessage
+    scope.user = {
+      email: ''
+      password: ''
+    }
+
+  app.directive 'loginForm', ['$http', (http) ->
+    scope: true
+    link:
+      (scope, element, attrs) ->
+        log scope
+        element.on 'submit', ->
+          scope.$apply ->
+            scope.dataFlow = true
+          http.post("/api/users/#{scope.user.email}/login", scope.user)
+            .success (data, status, headers, config) ->
+              scope.dataFlow = false
+              clearForm(scope)
+              scope.$root.view = 'welcome-screen'
+            .error (data, status, headers, config) ->
+              scope.dataFlow = false
+              scope.errorMessage = data.code
+  ]
+
+  app.directive 'clearForm', ['$http', (http) ->
     (scope, element, attrs) ->
-      form = element[0]
-      element.on 'submit', ->
-        api.login (serialize form)
+      element.on 'click', ->
+        scope.$apply -> clearForm(scope)
   ]
 
   restartAngular = ->
