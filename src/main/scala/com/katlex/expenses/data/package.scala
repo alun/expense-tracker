@@ -7,6 +7,8 @@ import org.bson.types.ObjectId
 
 package object data {
 
+  def nextId = ObjectId.get()
+
   lazy val base = Database.forURL("jdbc:h2:./db/expenses", driver = "org.h2.Driver")
 
   implicit val objIdColumnType = MappedColumnType.base[ObjectId, String](
@@ -28,7 +30,7 @@ package object data {
     base withSession { implicit session =>
       try {
         users.ddl.create
-        users += (ObjectId.get(), "alun@katlex.com", "5236e55bf84d77acf0f9c2aef5751903")
+        users += (nextId, "alun@katlex.com", "5236e55bf84d77acf0f9c2aef5751903")
       } catch {
         case e:SQLException => // probably database was already created
       }
@@ -40,6 +42,10 @@ package object data {
       case user :: _ => Some(user)
       case _ => None
     }).map(User.tupled)
+  }
+
+  def addUser(email:String, passwordHash:String) = base withSession { implicit session =>
+    users += (nextId, email, passwordHash)
   }
 
   def password(email:String, password:String) = {

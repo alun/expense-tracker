@@ -5,6 +5,9 @@ body = document.body.cloneNode(true)
 
   app = angular.module 'expenses', ['ngResource']
 
+  capitalize = (s) ->
+    s[0].toUpperCase() + s.split('').slice(1).join('')
+
   ###
   app.factory "userApi", ['$resource', (resource) ->
     resource "/api/users/:id/:verb",
@@ -28,11 +31,13 @@ body = document.body.cloneNode(true)
     scope: true
     link:
       (scope, element, attrs) ->
-        log scope
+        scope.$watch 'loginType', (v) ->
+          scope.loginButton = capitalize(v)
+
         element.on 'submit', ->
           scope.$apply ->
             scope.dataFlow = true
-          http.post("/api/users/#{scope.user.email}/login", scope.user)
+          http.post("/api/users/#{scope.user.email}/#{scope.loginType}", scope.user)
             .success (data, status, headers, config) ->
               scope.dataFlow = false
               clearForm(scope)

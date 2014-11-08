@@ -18,6 +18,19 @@ object Api {
   import JsonMethods._
   import Serialization._
 
+  object Parameters {
+    val Password = "password"
+  }
+
+  object Codes {
+    def MandatoryParameterMissing(param:String) = s"Mandatory parameter missing $param"
+    val IncorrectLogin = "Incorrect login or password"
+    val UserNameAlreadyTaken = "Such a user already exist"
+  }
+
+  import Codes._
+  import Parameters._
+
   val printer:Document => String = pretty _
   //val printer:Document => String = compact _
 
@@ -46,20 +59,45 @@ object Api {
       ("status", JString("error")),
       ("code", JString(code)))
 
+  private def getParam[T](params:JValue, param:String, matcher:PartialFunction[JValue, T]) = {
+    val p = (params \ param)
+    if (matcher.isDefinedAt(p))
+      Full(matcher(p))
+    else
+      Failure(MandatoryParameterMissing(param))
+  }
+
   private def processApi:PartialFunction[HttpRequest[_], Box[JValue]] = {
     case req @ POST(Path(Seg("api" :: "users" :: login :: "login" :: Nil))) =>
-      val badLogin = "Incorrect login or password"
       val params = parse(req.reader)
-      (for {
-        user <- Box(data.user(login)) ?~ badLogin
-        password <- (params \ "password") match {
-            case JString(p) => Full(data.password(user.email, p))
-            case _ => Failure("Password parameter should be passed")
-          }
-        if user.password == password
+      for {
+        user <- Box(data.user(login)) ?~ IncorrectLogin
+        password <- getParam(params, Password, {
+            case JString(p) => data.password(user.email, p)
+          }).filter(_ == user.password) ?~ IncorrectLogin
       } yield {
         JString("ok")
-      }) ?~ badLogin
+      }
+
+    case req @ POST(Path(Seg("api" :: "users" :: login :: "register" :: Nil))) =>
+      val params = parse(req.reader)
+      for {
+        password <- getParam(params,  Password, {
+            case JString(p) => data.password(login, p)
+          })
+        _ <- data.user(login) match {
+            case Some(user) =>
+              if (user.password == password)
+                Full(())
+              else
+                Failure(UserNameAlreadyTaken)
+            case None =>
+              Full(data.addUser(login, password))
+          }
+      } yield {
+        JString("ok")
+      }
+
     case Path(Seg(path @ "api" :: _)) =>
       Failure(s"Bad api call ${path.mkString("/")}")
   }
