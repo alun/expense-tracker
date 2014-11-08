@@ -22,7 +22,7 @@ body = document.body.cloneNode(true)
   clearForm = (scope) ->
     scope.form.$setPristine()
     delete scope.errorMessage
-    scope.user = {
+    scope.login = {
       email: ''
       password: ''
     }
@@ -32,19 +32,29 @@ body = document.body.cloneNode(true)
     link:
       (scope, element, attrs) ->
         scope.$watch 'loginType', (v) ->
-          scope.loginButton = capitalize(v)
+          scope.loginButton = capitalize(v) if v?
 
         element.on 'submit', ->
           scope.$apply ->
             scope.dataFlow = true
-          http.post("/api/users/#{scope.user.email}/#{scope.loginType}", scope.user)
+          http.post("/api/users/#{scope.login.email}/#{scope.loginType}", scope.login)
             .success (data, status, headers, config) ->
+              scope.$parent.user = data
               scope.dataFlow = false
               clearForm(scope)
               scope.$root.view = 'welcome-screen'
             .error (data, status, headers, config) ->
               scope.dataFlow = false
               scope.errorMessage = data.code
+  ]
+
+  app.controller 'expensesController', ['$scope', '$http', (scope, http) ->
+    scope.logout = ->
+      scope.dataFlow = true
+      http.post("/api/users/#{scope.user.id}/logout", "")
+        .success (data, status, headers, config) ->
+          scope.dataFlow = false
+          scope.$root.user = null
   ]
 
   app.directive 'clearForm', ['$http', (http) ->

@@ -7,9 +7,9 @@
     <title></title>
     <script type="text/javascript" src="/assets/js/angular.js"></script>
 </head>
-<body ng-init="loginType='login'">
+<body>
     <div class="container" ng-cloak class="ng-cloak" ng-init="view='welcome-screen'">
-        <div class="jumbotron" ng-show="view=='welcome-screen'">
+        <div class="jumbotron" ng-show="!user && view=='welcome-screen'">
             <h1>Welcome to expenses tracker!</h1>
             <p>You need to register to use it</p>
             <p>Please login or register using buttons below</p>
@@ -22,12 +22,12 @@
             <div class="col-md-4 col-md-offset-4 col-xs-6 col-xs-offset-3">
                 <form name="form" class="form-signin" login-form>
                     <h2 class="form-signin-heading">Please {{loginType}}</h2>
-                    <input type="email" class="form-control" name="username"
+                    <input type="email" class="form-control"
                            placeholder="Email Address" required="" autofocus=""
-                           ng-model="user.email"/>
-                    <input type="password" class="form-control" name="password"
+                           ng-model="login.email"/>
+                    <input type="password" class="form-control"
                            placeholder="Password" required=""
-                           ng-model="user.password"/>
+                           ng-model="login.password"/>
                     <div class="alert alert-danger"
                          ng-show="errorMessage">{{errorMessage}}</div>
                     <div class="btn-group col-xs-12">
@@ -41,7 +41,15 @@
                 </form>
             </div>
         </div>
+        <div class="col-md-12 row" ng-show="user"
+             ng-controller="expensesController">
+            <div class="pull-right">Hello, {{user.email}}
+                <a class="btn btn-sm btn-primary"
+                   ng-click="logout()" ng-disable="dataFlow">Logout</a>
+            </div>
+        </div>
     </div>
+    <div id="user"></div>
     <script type="text/javascript" src="/assets/js/angular-resource.js"></script>
     <script type="text/javascript" src="/assets/js/app.js"></script>
 </body>
