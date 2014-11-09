@@ -14,4 +14,5 @@
     
     <logger name="org.eclipse" level="WARN"/>
     <logger name="scala.slick" level="WARN"/>
+    <logger name="com.ning" level="WARN"/>
 </configuration>

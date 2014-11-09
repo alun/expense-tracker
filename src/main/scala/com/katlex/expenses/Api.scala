@@ -45,8 +45,7 @@ object Api {
   import Parameters._
   import Box._
 
-  val printer:Document => String = pretty _
-  //val printer:Document => String = compact _
+  val printer:Document => String = compact _
 
   def jsonResponse(response:JValue) = JsonContent ~> ResponseString(printer(render(response)))
   def jsonStringResponse(response:String) = JsonContent ~> ResponseString(response)

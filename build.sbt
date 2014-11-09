@@ -31,7 +31,9 @@ libraryDependencies ++= {
     "org.json4s" %% "json4s-native" % "3.2.11",
     "com.typesafe.slick" %% "slick" % "2.1.0",
     "com.h2database" % "h2" % "1.4.182" % "runtime",
-    "org.mongodb" % "mongo-java-driver" % "2.12.4"
+    "org.mongodb" % "mongo-java-driver" % "2.12.4",
+    "net.databinder.dispatch" %% "dispatch-core" % "0.11.2" % "test",
+    "org.specs2" %% "specs2" % "2.4.9" % "test"
   )
 }
 
