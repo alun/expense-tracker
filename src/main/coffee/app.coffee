@@ -29,6 +29,15 @@ body = document.body.cloneNode(true)
         scope.$watch 'loginType', (v) ->
           scope.loginButton = capitalize(v) if v?
 
+        # autofill workaround
+        setInterval ->
+          elems = element.find('input');
+          if elems.length > 0
+            elems.triggerHandler('input')
+              .triggerHandler('change')
+              .triggerHandler('keydown')
+        , 1000
+
         element.on 'submit', ->
           scope.$apply ->
             scope.dataFlow = true
