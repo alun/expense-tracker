@@ -78,26 +78,39 @@ body = document.body.cloneNode(true)
 
   app.directive 'expenseView', [() ->
     link: (scope, element, attrs) ->
-      scope.$watchCollection 'e', (v, old) ->
-        editing = v.editing
-        if editing
-          element.attr 'title', ''
-        else
-          element.attr 'title', 'Click to edit'
+      if scope.e.fresh
+        delete scope.e.fresh
+        scope.editing = true
 
+      element.on 'click', (e) ->
+        s = angular.element(e.target).scope()
+        if (!s.editing)
+          scope.finishEdit()
+          s.$apply ->
+            s.editing = true
+
+      scope.$watchCollection 'e', (v, old) ->
         if !angular.equals(v, old)
           scope.updating = true
           v.$save ->
             scope.updating = false
-            v.editing = editing
+
+      scope.deleteExpense = (event) ->
+        event.stopPropagation()
+        scope.e.$delete ->
+          idx = scope.expenses.indexOf(scope.e)
+          scope.expenses.splice(idx, 1)
   ]
 
   app.controller 'expensesController',
     ['$scope', '$http', 'Expense', (scope, http, Expense) ->
 
-      scope.finishEdit = () ->
-        angular.forEach scope.expenses, (e) ->
-          delete e.editing
+      scope.finishEdit = (e) ->
+        e.stopPropagation() if (e)
+        s = scope.$$childHead
+        while s
+          s.editing = false
+          s = s.$$nextSibling
         scope.expenses.sort (a, b) ->
           b.timestamp - a.timestamp
 
@@ -117,6 +130,7 @@ body = document.body.cloneNode(true)
             scope.expenses = null
 
       scope.addExpense = ->
+        scope.finishEdit()
         scope.expenses ||= []
         scope.addingExpense = true
         e =
@@ -128,7 +142,7 @@ body = document.body.cloneNode(true)
         Expense.save(e)
         .$promise.then (e) ->
           scope.addingExpense = false
-          e.editing = true
+          e.fresh = true
           scope.expenses.unshift e
     ]
 

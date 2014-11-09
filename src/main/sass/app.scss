@@ -65,8 +65,11 @@ body {
 
 .expenses-table {
 
-  .zero-width {
-    width: 1px;
+  td {
+    width: 25%;
+  }
+  td.zero-width {
+    width: 0%;
   }
 
   .delete-btn {

@@ -135,6 +135,17 @@ package object data {
     }
 
   /**
+   * Finds a single expense by id
+   * @param id
+   * @return
+   */
+  def getExpense(id:ObjectId) = db.withSession { implicit dbSesssion =>
+    (for {
+      e <- expenses if e.id === id
+    } yield e).list.headOption
+  }
+
+  /**
    * Saves new expense for given user to database
    * @param user
    * @param expense
@@ -159,6 +170,17 @@ package object data {
 
     if (res == 1) Some(expense)
     else None
+  }
+
+  /**
+   * Removes expense from db
+   * @param expense
+   * @return 1 if ok, 0 otherwise
+   */
+  def removeExpense(expense:Expense) = db.withSession { implicit dbSession =>
+    (for {
+      e <- expenses if e.id === expense.id
+    } yield e).delete
   }
 
   /**

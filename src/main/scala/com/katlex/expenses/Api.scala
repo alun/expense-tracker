@@ -14,12 +14,13 @@ import net.liftweb.common.{Empty, Box, Failure}
 import net.liftweb.common.Full
 import scala.Some
 import com.katlex.expenses.data.{Id, Serializer}
-import com.katlex.expenses.data.Model.User
+import com.katlex.expenses.data.Model.{Expense, User}
 import org.json4s.JsonAST.JString
 import unfiltered.response.ResponseString
 import unfiltered.Cookie
 import com.katlex.expenses.sessions.SessionManager
 import java.util.Date
+import org.bson.types.ObjectId
 
 object Api {
   import JsonMethods._
@@ -82,14 +83,17 @@ object Api {
       Failure(MandatoryParameterMissing(param))
   }
 
-  private def setSession(user:User) = {
+  private def updateSession(user:User) = {
     val sid = SessionManager.touch(user)
     SetCookies(Cookie(SessionManager.COOKIE, sid, None, Some("/"), Some(SessionManager.TTL / 1000)))
   }
 
   private def loginResponse(user:User) =
-    setSession(user) ~>
+    updateSession(user) ~>
     jsonStringResponse(Serializer.toJsonString(user))
+
+  private def authorize(req:HttpRequest[_], userId:ObjectId) =
+    Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
 
   private def processApi(implicit params:JValue = null):PartialFunction[HttpRequest[_], Box[ResponseFunction[Any]]] = {
     case req @ POST(Path(Seg("api" :: "users" :: login :: "login" :: Nil))) =>
@@ -125,7 +129,7 @@ object Api {
 
     case req @ GET(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
       for {
-        user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
+        user <- authorize(req, userId)
         skip <- getParam(Skip, {
             case JDecimal(p) => p.toInt
             case _ => 0
@@ -138,7 +142,7 @@ object Api {
           case JString(filter) => Some(filter)
           case _ => None
         })
-      } yield setSession(user) ~> jsonStringResponse(
+      } yield updateSession(user) ~> jsonStringResponse(
           Serializer.toJsonString(
             data.getExpenses(
               user,
@@ -149,27 +153,38 @@ object Api {
 
     case req @ POST(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
       for {
-        user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
-        expense <- (Serializer.fromJson(params) ?~ BadInput).filter { e =>
+        user <- authorize(req, userId)
+        expense <- (Serializer.fromJson[Expense](params) ?~ BadInput).filter { e =>
             e.ownerId == user.id && e.id == null
           } ?~ UnauthorizedRequest
         savedExpense <- data.saveExpense(user, expense) ?~ DatabaseError
       } yield {
-        setSession(user) ~> jsonStringResponse(Serializer.toJsonString(savedExpense))
+        updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(savedExpense))
       }
 
     case req @ POST(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Id(expenseId) :: Nil))) =>
       for {
-        user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
+        user <- authorize(req, userId)
         expense <-
-          ((Serializer.fromJson(params) ?~ BadInput).filter { e =>
+          ((Serializer.fromJson[Expense](params) ?~ BadInput).filter { e =>
             e.ownerId == user.id
           } ?~ UnauthorizedRequest).filter { e =>
             e.id == expenseId
           } ?~ BadInput
         updatedExpense <- data.updateExpense(expense) ?~ DatabaseError
       } yield {
-        setSession(user) ~> jsonStringResponse(Serializer.toJsonString(updatedExpense))
+        updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(updatedExpense))
+      }
+
+    case req @ DELETE(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Id(expenseId) :: Nil))) =>
+      for {
+        user <- authorize(req, userId)
+        expense <- (data.getExpense(expenseId) ?~ BadInput).filter { e =>
+            e.ownerId == user.id
+          } ?~ UnauthorizedRequest
+        _ <- Full(()).filter(_ => data.removeExpense(expense) == 1) ?~ DatabaseError
+      } yield {
+        updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(expense))
       }
 
     case Path(Seg(path @ "api" :: _)) =>

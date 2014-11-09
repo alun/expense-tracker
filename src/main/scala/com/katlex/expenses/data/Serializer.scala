@@ -19,9 +19,9 @@ object Serializer {
   def toJsonString(expense:Expense) = write(expense)
   def toJsonString(expenses:List[Expense]) = write(expenses)
 
-  def fromJson(expense:JValue) = {
+  def fromJson[T : Manifest](expense:JValue) = {
     Exception.catching(classOf[Exception]).opt {
-      read[Expense](write(expense))
+      read[T](write(expense))
     }
   }
 }
