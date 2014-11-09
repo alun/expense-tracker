@@ -27,9 +27,9 @@ object Api {
 
   object Parameters {
     val Password  = "password"
-    val Skip      = "Skip"
-    val Limit     = "Limit"
-    val Filter    = "Filter"
+    val Skip      = "skip"
+    val Limit     = "limit"
+    val Filter    = "filter"
   }
 
   object Codes {
@@ -75,13 +75,24 @@ object Api {
       ("status", JString("error")),
       ("code", JString(code)))
 
-  private def getParam[T](param:String, matcher:PartialFunction[JValue, T])(implicit params:JValue) = {
+  private def jsonParam[T](param:String, matcher:PartialFunction[JValue, T])(implicit params:JValue) = {
     val p = (params \ param)
     if (matcher.isDefinedAt(p))
       Full(matcher(p))
     else
       Failure(MandatoryParameterMissing(param))
   }
+
+  private def requestParam[T](req:HttpRequest[_], name:String,
+                              transform:String => Option[T], defaultValue: Option[T] = None) = {
+    req.parameterValues(name).headOption.flatMap(transform) orElse defaultValue
+  }
+
+  private def stringParam(req:HttpRequest[_], name:String, defaultValue:Option[String]) =
+    requestParam(req, name, Some(_), defaultValue)
+
+  private def intParam(req:HttpRequest[_], name:String, defaultValue:Option[Int]) =
+    requestParam(req, name, s => Exception.catching(classOf[NumberFormatException]).opt(s.toInt), defaultValue)
 
   private def updateSession(user:User) = {
     val sid = SessionManager.touch(user)
@@ -95,18 +106,18 @@ object Api {
   private def authorize(req:HttpRequest[_], userId:ObjectId) =
     Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
 
-  private def processApi(implicit params:JValue = null):PartialFunction[HttpRequest[_], Box[ResponseFunction[Any]]] = {
+  private def processApi(implicit bodyParams:JValue = null):PartialFunction[HttpRequest[_], Box[ResponseFunction[Any]]] = {
     case req @ POST(Path(Seg("api" :: "users" :: login :: "login" :: Nil))) =>
       for {
         user <- Box(data.getUser(login)) ?~ IncorrectLogin
-        password <- getParam(Password, {
+        password <- jsonParam(Password, {
             case JString(p) => data.password(user.email, p)
           }).filter(_ == user.password) ?~ IncorrectLogin
       } yield loginResponse(user)
 
     case req @ POST(Path(Seg("api" :: "users" :: login :: "register" :: Nil))) =>
       for {
-        password <- getParam(Password, {
+        password <- jsonParam(Password, {
             case JString(p) => data.password(login, p)
           })
         user <- data.getUser(login) match {
@@ -130,18 +141,9 @@ object Api {
     case req @ GET(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
       for {
         user <- authorize(req, userId)
-        skip <- getParam(Skip, {
-            case JDecimal(p) => p.toInt
-            case _ => 0
-          })
-        limit <- getParam(Limit, {
-            case JDecimal(p) => p.toInt
-            case _ => 10
-          })
-        filter <- getParam(Filter, {
-          case JString(filter) => Some(filter)
-          case _ => None
-        })
+        skip <- intParam(req, Skip, Some(0))
+        limit <- intParam(req, Limit, Some(10))
+        filter = stringParam(req, Filter, None)
       } yield updateSession(user) ~> jsonStringResponse(
           Serializer.toJsonString(
             data.getExpenses(
@@ -154,7 +156,7 @@ object Api {
     case req @ POST(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
       for {
         user <- authorize(req, userId)
-        expense <- (Serializer.fromJson[Expense](params) ?~ BadInput).filter { e =>
+        expense <- (Serializer.fromJson[Expense](bodyParams) ?~ BadInput).filter { e =>
             e.ownerId == user.id && e.id == null
           } ?~ UnauthorizedRequest
         savedExpense <- data.saveExpense(user, expense) ?~ DatabaseError
@@ -166,7 +168,7 @@ object Api {
       for {
         user <- authorize(req, userId)
         expense <-
-          ((Serializer.fromJson[Expense](params) ?~ BadInput).filter { e =>
+          ((Serializer.fromJson[Expense](bodyParams) ?~ BadInput).filter { e =>
             e.ownerId == user.id
           } ?~ UnauthorizedRequest).filter { e =>
             e.id == expenseId

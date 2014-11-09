@@ -53,17 +53,27 @@
                     <a class="btn btn-sm btn-primary">Weekly report</a>
                 </div>
             </div>
-            <div class="clearfix expenses-head" ng-show="expenses.length">
-
+            <div class="clearfix expenses-head" ng-show="expenses.length || filterString">
                 <div class="pull-right">
                     <a class="btn btn-md btn-default"
                        ng-click="addExpense()"
                        ng-disabled="addingExpense">Add new expense</a>
                 </div>
                 <div class="pull-right col-xs-6">
-                    <input type="text" class="form-control"
-                           placeholder="Search expenses">
+                    <div class="input-group">
+                        <input type="text" class="form-control"
+                               placeholder="Search expenses" ng-model="filterStringInput">
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"
+                                  ng-show="expensesLoading"></span>
+                            <a class="close" ng-hide="expensesLoading"
+                                    ng-click="filterStringInput = ''">&times;</a>
+                        </span>
+                    </div>
                 </div>
+            </div>
+            <div class="alert alert-info" ng-show="expenses.length == 0 && filterString">
+                Nothing found for {{filterString}}
             </div>
             <table class="table expenses-table" ng-show="expenses.length">
                 <thead>
@@ -119,7 +129,7 @@
                     </tr>
                 </tbody>
             </table>
-            <div ng-show="expenses && !expenses.length" class="alert alert-info">
+            <div ng-show="expenses && !expenses.length && !filterString && !expensesLoading" class="alert alert-info">
                 You don't have any expenses yet.<br>
                 <a class="btn btn-md btn-default"
                    ng-click="addExpense()"

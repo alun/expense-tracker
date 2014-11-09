@@ -98,12 +98,20 @@ body = document.body.cloneNode(true)
       scope.deleteExpense = (event) ->
         event.stopPropagation()
         scope.e.$delete ->
-          idx = scope.expenses.indexOf(scope.e)
-          scope.expenses.splice(idx, 1)
+          scope.refreshExpenses()
   ]
 
   app.controller 'expensesController',
     ['$scope', '$http', 'Expense', (scope, http, Expense) ->
+
+      filterRefresher = -1
+      scope.$watch 'filterStringInput', (v) ->
+        clearTimeout filterRefresher
+        filterRefresher = setTimeout ->
+          scope.$apply ->
+            scope.filterString = v
+            scope.refreshExpenses(v)
+        , 500
 
       scope.finishEdit = (e) ->
         e.stopPropagation() if (e)
@@ -111,15 +119,19 @@ body = document.body.cloneNode(true)
         while s
           s.editing = false
           s = s.$$nextSibling
-        scope.expenses.sort (a, b) ->
-          b.timestamp - a.timestamp
+        scope.refreshExpenses() if (e)
+
+      scope.refreshExpenses = ->
+        return if !scope.user?
+        scope.expensesLoading = true
+        params = userId: scope.user.id
+        params.filter = scope.filterString if scope.filterString?
+        Expense.query params, (data) ->
+          scope.expensesLoading = false
+          scope.expenses = data
 
       scope.$watch "user", (user) ->
-        if user?
-          Expense.query
-            userId: user.id
-            , (data) ->
-              scope.expenses = data
+        scope.refreshExpenses()
 
       scope.logout = ->
         scope.dataFlow = true
