@@ -51,31 +51,92 @@
                 <div class="pull-left">
                     <a class="btn btn-sm btn-primary">Weekly report</a>
                 </div>
-                <div class="pull-left col-xs-8">
+            </div>
+            <div class="clearfix expenses-head" ng-show="expenses.length">
+
+                <div class="pull-right">
+                    <a class="btn btn-md btn-default"
+                       ng-click="addExpense()"
+                       ng-disabled="addingExpense">Add new expense</a>
+                </div>
+                <div class="pull-right col-xs-6">
                     <input type="text" class="form-control"
                            placeholder="Search expenses">
                 </div>
             </div>
-            <table class="table col-md-12" ng-show="expenses">
+            <table class="table expenses-table" ng-show="expenses.length">
                 <thead>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Amount</th>
-                    <th>Comment</th>
-                    <th>Description</th>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Comment</th>
+                        <th class="zero-with"></th>
+                    </tr>
                 </thead>
-                <tr ng-repeat="e in expenses">
-                    <td>{{e.timestamp | date}}</td>
-                    <td>{{e.timestamp | date:'shortTime'}}</td>
-                    <td>{{e.amount | currency}}</td>
-                    <td>{{e.comment}}</td>
-                    <td>{{e.description}}</td>
-                </tr>
+                <tbody>
+                    <tr ng-repeat="e in expenses"
+                        ng-class="e.editing ? 'editing' : ''"
+                        expense-view>
+                        <td ng-hide="e.editing">{{e.timestamp | date}}</td>
+                        <td ng-hide="e.editing">{{e.timestamp | date:'shortTime'}}</td>
+                        <td ng-hide="e.editing">{{e.description}}</td>
+                        <td ng-hide="e.editing">{{e.amount | currency}}</td>
+                        <td ng-hide="e.editing">{{e.comment}}</td>
+                        <td ng-hide="e.editing" class="zero-width"><a class="delete-btn btn btn-md btn-default">
+                            <span class="glyphicon glyphicon-trash"></span>
+                            </a>
+                        </td>
+
+                        <!-- edit view -->
+                        <td ng-show="e.editing" colspan="2">
+                            <input type='text' class="form-control" date-control
+                                   value="{{e.timestamp | date:'MM/dd/yyyy'}} {{e.timestamp | date:'shortTime'}}"
+                                   edits="timestamp"/>
+                        <td ng-show="e.editing">
+                            <input class="form-control"
+                                   value="{{e.description}}"
+                                   edits="description"></td>
+                        <td ng-show="e.editing">
+                            <input class="form-control"
+                                   value="{{e.amount}}"
+                                   edits="amount" float-value></td>
+                        <td ng-show="e.editing">
+                            <input class="form-control"
+                                   value="{{e.comment}}"
+                                   edits="comment"></td>
+                        <td ng-show="e.editing">
+                            <a class="btn btn-md btn-default" ng-click="finishEdit()"
+                               ng-disabled="updating">
+                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"
+                                    ng-show="updating"></span><span
+                                    class="glyphicon glyphicon-check"
+                                    ng-hide="updating"></span></a>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
+            <div ng-show="expenses && !expenses.length" class="alert alert-info">
+                You don't have any expenses yet.<br>
+                <a class="btn btn-md btn-default"
+                   ng-click="addExpense()"
+                   ng-disabled="addingExpense">Add your first expense</a>
+            </div>
         </div>
     </div>
     <div id="user"></div>
+
+    <!-- datetime picker -->
+    <link rel="stylesheet" type="text/css" href="/assets/css/bootstrap-datetimepicker.min.css">
+    <script type="text/javascript" src="/assets/js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="/assets/js/moment.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap/collapse.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap-datetimepicker.js"></script>
+
     <script type="text/javascript" src="/assets/js/angular-resource.js"></script>
     <script type="text/javascript" src="/assets/js/app.js"></script>
+
 </body>
 </html>

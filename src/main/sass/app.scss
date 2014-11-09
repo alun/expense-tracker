@@ -61,3 +61,44 @@ body {
 .expenses-head {
   margin-bottom: 1.5em;
 }
+
+
+.expenses-table {
+
+  .zero-width {
+    width: 1px;
+  }
+
+  .delete-btn {
+    visibility: hidden;
+  }
+
+  tbody tr:hover {
+    background: $state-success-bg;
+    .delete-btn {
+      visibility: visible;
+    }
+  }
+
+  .editing {
+    background: $state-success-bg;
+    td {
+      vertical-align: middle;
+    }
+  }
+}
+
+.glyphicon-refresh-animate {
+    -animation: spin .7s infinite linear;
+    -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}

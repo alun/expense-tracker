@@ -13,7 +13,7 @@ import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import net.liftweb.common.{Empty, Box, Failure}
 import net.liftweb.common.Full
 import scala.Some
-import com.katlex.expenses.data.{Serializer}
+import com.katlex.expenses.data.{Id, Serializer}
 import com.katlex.expenses.data.Model.User
 import org.json4s.JsonAST.JString
 import unfiltered.response.ResponseString
@@ -36,6 +36,8 @@ object Api {
     val IncorrectLogin = "Incorrect login or password"
     val UserNameAlreadyTaken = "Such a user already exist"
     val UnauthorizedRequest = "Unauthorized request"
+    val BadInput = "Bad input"
+    val DatabaseError = "Database error"
   }
 
   import Codes._
@@ -114,14 +116,14 @@ object Api {
           }
       } yield loginResponse(user)
 
-    case req @ POST(Path(Seg("api" :: "users" :: id :: "logout" :: Nil))) =>
+    case req @ POST(Path(Seg("api" :: "users" :: Id(id) :: "logout" :: Nil))) =>
       Full(
         SetCookies(Cookie(
           SessionManager.COOKIE, "", None, Some("/"), Some(- (new Date().getTime / 1000).toInt)
         )) ~> jsonResponse(JString("ok"))
       )
 
-    case req @ GET(Path(Seg("api" :: "users" :: userId :: "expenses" :: Nil))) =>
+    case req @ GET(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
       for {
         user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
         skip <- getParam(Skip, {
@@ -136,14 +138,39 @@ object Api {
           case JString(filter) => Some(filter)
           case _ => None
         })
-      } yield jsonStringResponse(
-        Serializer.toJsonString(
-          data.getExpenses(
-            user,
-            skip = skip,
-            limit = limit,
-            filter = filter))
-      )
+      } yield setSession(user) ~> jsonStringResponse(
+          Serializer.toJsonString(
+            data.getExpenses(
+              user,
+              skip = skip,
+              limit = limit,
+              filter = filter))
+        )
+
+    case req @ POST(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Nil))) =>
+      for {
+        user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
+        expense <- (Serializer.fromJson(params) ?~ BadInput).filter { e =>
+            e.ownerId == user.id && e.id == null
+          } ?~ UnauthorizedRequest
+        savedExpense <- data.saveExpense(user, expense) ?~ DatabaseError
+      } yield {
+        setSession(user) ~> jsonStringResponse(Serializer.toJsonString(savedExpense))
+      }
+
+    case req @ POST(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: Id(expenseId) :: Nil))) =>
+      for {
+        user <- Util.sessionUser(req).filter(_.id == userId) ?~ UnauthorizedRequest
+        expense <-
+          ((Serializer.fromJson(params) ?~ BadInput).filter { e =>
+            e.ownerId == user.id
+          } ?~ UnauthorizedRequest).filter { e =>
+            e.id == expenseId
+          } ?~ BadInput
+        updatedExpense <- data.updateExpense(expense) ?~ DatabaseError
+      } yield {
+        setSession(user) ~> jsonStringResponse(Serializer.toJsonString(updatedExpense))
+      }
 
     case Path(Seg(path @ "api" :: _)) =>
       Failure(s"Bad api call ${path.mkString("/")}")

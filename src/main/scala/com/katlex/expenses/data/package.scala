@@ -113,15 +113,53 @@ package object data {
     } yield u).list.headOption
   }
 
+  /**
+   * Produces the list of expenses for the given user using given skip/limit values
+   * and filter for comments and description
+   * @param user
+   * @param skip
+   * @param limit
+   * @param filter
+   * @return
+   */
   def getExpenses(user:User, skip:Int = 0, limit:Int = 10, filter:Option[String] = None) =
     db.withSession { implicit dbSession =>
       val query = filter.map(v => s"%$v%").map { v =>
         (for {
-          e <- expenses if (e.description like v) || (e.comment like v)
+          e <- expenses
+            if (e.description like v) ||
+               (e.comment like v)
         } yield e)
       } .getOrElse(expenses)
-      query.drop(skip).take(limit).list
+      query.filter(_.ownerId === user.id).sortBy(_.timestamp.desc).drop(skip).take(limit).list
     }
+
+  /**
+   * Saves new expense for given user to database
+   * @param user
+   * @param expense
+   */
+  def saveExpense(user:User, expense:Expense) = db.withSession { implicit dbSession =>
+    val e =
+      if (expense.id == null) expense.copy(id = nextId, ownerId = user.id)
+      else expense
+    if ((expenses += e) == 1) Some(e)
+    else None
+  }
+
+  /**
+   * Updates exising expense in database
+   * @param expense
+   * @return
+   */
+  def updateExpense(expense:Expense) = db.withSession { implicit dbSession =>
+    val res = (for {
+      e <- expenses if e.id === expense.id && e.ownerId === expense.ownerId
+    } yield e).update(expense)
+
+    if (res == 1) Some(expense)
+    else None
+  }
 
   /**
    * Creates an MD5 hash of the password using the email as a salt

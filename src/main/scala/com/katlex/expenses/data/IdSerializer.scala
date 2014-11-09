@@ -9,6 +9,7 @@ object IdSerializer extends Serializer[ObjectId] {
   def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), ObjectId] = {
     case (TypeInfo(ObjectIdClass, _), json) => json match {
       case JString(id) if ObjectId.isValid(id) => new ObjectId(id)
+      case JNothing => null
       case x => throw new MappingException("Can't convert " + x + " to ObjectId")
     }
   }
