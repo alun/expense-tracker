@@ -10,7 +10,7 @@ package object data {
   import Model._
 
   def nextId = ObjectId.get()
-  def now = new java.util.Date
+  def now = new java.sql.Timestamp(new java.util.Date().getTime)
 
   private lazy val dbUrl = sys.props.get("expenses.db").getOrElse("jdbc:h2:./db/expenses")
   lazy val db = Database.forURL(dbUrl, driver = "org.h2.Driver")

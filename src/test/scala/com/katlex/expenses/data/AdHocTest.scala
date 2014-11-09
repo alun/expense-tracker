@@ -20,9 +20,9 @@ object AdHocTest {
       val sid = nextId
       sessions += Session(sid, uid, now.getTime)
 
-      expenses += Expense(nextId, uid, now.getTime, "my first expense", 10, "hello")
-      expenses += Expense(nextId, uid, now.getTime, "my second expense", 20.02d, "")
-      expenses += Expense(nextId, uid, now.getTime, "unexpected", 100.100d, "")
+      expenses += Expense(nextId, uid, now, "my first expense", 10, "hello")
+      expenses += Expense(nextId, uid, now, "my second expense", 20.02d, "")
+      expenses += Expense(nextId, uid, now, "unexpected", 100.100d, "")
 
       println {
         (for {

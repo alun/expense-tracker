@@ -3,6 +3,7 @@ package com.katlex.expenses.data
 import scala.slick.driver.H2Driver.simple._
 import org.bson.types.ObjectId
 import scala.slick.lifted.Tag
+import java.sql.Timestamp
 
 /**
  * Domain model definition
@@ -33,12 +34,12 @@ object Model {
   }
   val sessions = TableQuery[Sessions]
 
-  case class Expense(id:ObjectId, ownerId:ObjectId, timestamp:Long,
+  case class Expense(id:ObjectId, ownerId:ObjectId, timestamp:Timestamp,
                      description:String, amount:BigDecimal, comment:String)
   class Expenses(tag:Tag) extends Table[Expense](tag, "EXPENSES") {
     def id = column[ObjectId]("EXPENSE_ID", O.PrimaryKey)
     def ownerId = column[ObjectId]("USER_ID")
-    def timestamp = column[Long]("TIMESTAMP")
+    def timestamp = column[Timestamp]("TIMESTAMP")
     def description = column[String]("DESCRIPTION")
     def amount = column[BigDecimal]("AMOUNT")
     def comment = column[String]("COMMENT")

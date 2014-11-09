@@ -4,6 +4,7 @@ import scala.slick.driver.H2Driver.simple._
 import scala.util.Random
 import scala.slick.driver.JdbcProfile
 import org.bson.types.ObjectId
+import java.sql.{Timestamp, Date}
 
 object GenTestData {
   import Model._
@@ -36,7 +37,7 @@ object GenTestData {
     val yearMilliseconds = 52L * 7 * 24 * 60 * 60 * 1000
 
     def randInt(max:Int) = Random.nextInt(max)
-    def randTs = now.getTime - (Math.random() * yearMilliseconds).toLong
+    def randTs = new java.sql.Timestamp(now.getTime - (Math.random() * yearMilliseconds).toLong)
     def words = "gift kauf expense shop auto house appartment transport taxi wife".split(" ").toList
     def randWord = words(randInt(words.size))
     def randSentence = (0 to randInt(3)).map(_ => randWord).mkString(" ")
@@ -48,12 +49,23 @@ object GenTestData {
 
   def main(args:Array[String]) {
 
-    withRealDb { implicit dbSession =>
+    withMemDb { implicit dbSession =>
       val uid = createTestUser
       genRandExpenses(uid)
 
+      val week = SimpleFunction.unary[Timestamp, Int]("week")
+      val year = SimpleFunction.unary[Timestamp, Int]("year")
+
+      val q1 = (for {
+        e <- expenses if year(e.timestamp) === 2014 && e.ownerId === uid
+      } yield (week(e.timestamp), e.amount)).groupBy(_._1)
+
+      val q2 = (for {
+        (week, amount) <- q1
+      } yield (week, amount.map(_._2).avg, amount.map(_._2).sum)).sortBy(_._1.desc)
+
       println {
-        expenses.list
+        q2.list
       }
     }
 
