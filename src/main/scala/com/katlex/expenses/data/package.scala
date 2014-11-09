@@ -127,8 +127,8 @@ package object data {
       val query = filter.map(v => s"%$v%").map { v =>
         (for {
           e <- expenses
-            if (e.description like v) ||
-               (e.comment like v)
+            if (e.description.toLowerCase like v.toLowerCase) ||
+               (e.comment.toLowerCase like v.toLowerCase)
         } yield e)
       } .getOrElse(expenses)
       query.filter(_.ownerId === user.id).sortBy(_.timestamp.desc).drop(skip).take(limit).list
