@@ -2,7 +2,7 @@ package com.katlex.expenses
 
 import scala.slick.driver.H2Driver.simple._
 import java.security.MessageDigest
-import java.sql.SQLException
+import java.sql.{Timestamp, SQLException}
 import org.bson.types.ObjectId
 
 package object data {
@@ -181,6 +181,32 @@ package object data {
     (for {
       e <- expenses if e.id === expense.id
     } yield e).delete
+  }
+
+  /**
+   * Generates statistics by year and week number for given
+   */
+  def getWeekStats(u:User) = db.withSession { implicit dbSession =>
+    val week = SimpleFunction.unary[Timestamp, Int]("week")
+    val year = SimpleFunction.unary[Timestamp, Int]("year")
+
+    val tsAmountByYearAndWeek = (for {
+      e <- expenses if e.ownerId === u.id
+    } yield (e.timestamp, e.amount)).groupBy {
+      case (timestamp, _) => (year(timestamp), week(timestamp))
+    }
+
+    val expensesByWeeks = (for {
+      ((year, week), timestampsAmounts) <- tsAmountByYearAndWeek
+    } yield {
+      val amounts = timestampsAmounts.map(_._2)
+      (year, week, amounts.length, amounts.avg, amounts.sum)
+    }).sortBy(_._2.desc).sortBy(_._1.desc)
+
+    expensesByWeeks.list.collect {
+      case (year, week, total, Some(avg), Some(sum)) =>
+        WeekStat(year, week, total, avg, sum)
+    }
   }
 
   /**

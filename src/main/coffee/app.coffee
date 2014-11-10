@@ -1,5 +1,22 @@
 body = document.body.cloneNode(true)
 
+#
+# determinest start and end of the week given a year and week
+#
+week = (year, week, mondayStyle = false)->
+  m = moment()
+
+  m.startOf('year')
+  m.startOf('week')
+
+  if mondayStyle
+    m.add(1, 'day')
+
+  start = m.add(week - 1, 'week').subtract(m.zone(), 'minutes')
+  end = moment(m).add(1, 'week').subtract(1, 'hour')
+
+  [start.valueOf(), end.valueOf()]
+
 @runApp = ->
   log = (args...) -> console?.log?(args...)
 
@@ -12,6 +29,10 @@ body = document.body.cloneNode(true)
     resource "/api/users/:userId/expenses/:id",
       userId: '@ownerId'
       id: '@id'
+  ]
+
+  app.factory "WeekStat", ['$resource', (resource) ->
+    resource "/api/users/:userId/expenses/stats"
   ]
 
   clearForm = (scope) ->
@@ -91,9 +112,9 @@ body = document.body.cloneNode(true)
 
       scope.$watchCollection 'e', (v, old) ->
         if !angular.equals(v, old)
-          scope.updating = true
+          scope.$parent.updating = true
           v.$save ->
-            scope.updating = false
+            scope.$parent.updating = false
 
       scope.deleteExpense = (event) ->
         event.stopPropagation()
@@ -102,7 +123,7 @@ body = document.body.cloneNode(true)
   ]
 
   app.controller 'expensesController',
-    ['$scope', '$http', 'Expense', (scope, http, Expense) ->
+    ['$scope', '$http', 'Expense', 'WeekStat', (scope, http, Expense, WeekStat) ->
 
       filterRefresher = -1
       scope.$watch 'filterStringInput', (v) ->
@@ -123,14 +144,15 @@ body = document.body.cloneNode(true)
 
       scope.refreshExpenses = ->
         return if !scope.user?
-        scope.expensesLoading = true
+        scope.updating = true
         params = userId: scope.user.id
         params.filter = scope.filterString if scope.filterString?
         Expense.query params, (data) ->
-          scope.expensesLoading = false
+          scope.updating = false
           scope.expenses = data
 
       scope.$watch "user", (user) ->
+        scope.view = 'expenses'
         scope.refreshExpenses()
 
       scope.logout = ->
@@ -156,6 +178,19 @@ body = document.body.cloneNode(true)
           scope.addingExpense = false
           e.fresh = true
           scope.expenses.unshift e
+
+      scope.weekStats = ->
+        scope.stats = null
+        scope.view = 'weekStats'
+        scope.updating = true
+        params = userId: scope.user.id
+        statWeek = (stat) -> week(stat.year, stat.week, false)
+        WeekStat.query params, (data) ->
+          scope.updating = false
+          scope.stats = for d in data
+            d.week = statWeek(d)
+            d
+
     ]
 
   app.directive 'clearForm', ['$http', (http) ->

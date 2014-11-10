@@ -54,4 +54,21 @@ object Model {
     def * = (id, ownerId, timestamp, description, amount, comment) <> (Expense.tupled, Expense.unapply)
   }
   val expenses = TableQuery[Expenses]
+
+  /**
+   * Helper DTO class for week expenses statistics
+   * @param year
+   * @param week
+   * @param totalExpenses
+   * @param averageExpense
+   * @param total
+   */
+  case class WeekStat(
+                       year:Int,
+                       week:Int,
+                       totalExpenses:Int,
+                       averageExpense:BigDecimal,
+                       total:BigDecimal
+                       )
+
 }

@@ -42,104 +42,132 @@
                 </form>
             </div>
         </div>
-        <div class="col-md-12 row" ng-show="user"
-             ng-controller="expensesController">
+        <div class="row" ng-show="user" ng-controller="expensesController">
             <div class="clearfix expenses-head">
                 <div class="pull-right">Hello, {{user.email}}
                     <a class="btn btn-sm btn-primary"
                        ng-click="logout()" ng-disable="dataFlow">Logout</a>
                 </div>
-                <div class="pull-left">
-                    <a class="btn btn-sm btn-primary">Weekly report</a>
+                <div class="pull-left" ng-show="view == 'expenses'">
+                    <a class="btn btn-sm btn-primary"
+                       ng-click="weekStats()">Report by weeks</a>
+                </div>
+                <div class="pull-left" ng-show="view == 'weekStats'">
+                    <a class="btn btn-sm btn-primary"
+                       ng-click="view = 'expenses'">Edit expenses</a>
+                </div>
+                <div class="pull-left col-md-2" ng-show="updating">
+                    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
                 </div>
             </div>
-            <div class="clearfix expenses-head" ng-show="expenses.length || filterString">
-                <div class="pull-right">
-                    <a class="btn btn-md btn-default"
-                       ng-click="addExpense()"
-                       ng-disabled="addingExpense">Add new expense</a>
-                </div>
-                <div class="pull-right col-xs-6">
-                    <div class="input-group">
-                        <input type="text" class="form-control"
-                               placeholder="Search expenses" ng-model="filterStringInput">
-                        <span class="input-group-addon">
-                            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"
-                                  ng-show="expensesLoading"></span>
-                            <a class="close" ng-hide="expensesLoading"
-                                    ng-click="filterStringInput = ''">&times;</a>
-                        </span>
+            <div class="col-md-12" ng-show="view == 'expenses'">
+                <div class="clearfix expenses-head">
+                    <div class="pull-right">
+                        <a class="btn btn-md btn-default"
+                           ng-click="addExpense()"
+                           ng-disabled="addingExpense">Add new expense</a>
+                    </div>
+                    <div class="pull-right col-xs-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control"
+                                   placeholder="Search expenses" ng-model="filterStringInput">
+                            <span class="input-group-addon">
+                                <a class="close" ng-click="filterStringInput = ''">&times;</a>
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="alert alert-info" ng-show="expenses.length == 0 && filterString">
-                Nothing found for {{filterString}}
-            </div>
-            <table class="table expenses-table" ng-show="expenses.length">
-                <thead>
-                    <tr>
-                        <th>Date/Time</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Comment</th>
-                        <th class="zero-with"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr ng-repeat="e in expenses"
-                        ng-class="editing ? 'editing' : ''"
-                        title="{{editing ? '' : 'Click to edit'}}"
-                        expense-view>
-                        <td ng-hide="editing">
-                            {{e.timestamp | date:'yyyy-MM-dd HH:mm'}}</td>
-                        <td ng-hide="editing">{{e.description}}</td>
-                        <td ng-hide="editing">{{e.amount | currency}}</td>
-                        <td ng-hide="editing">{{e.comment}}</td>
-                        <td ng-hide="editing" class="zero-width"><a class="delete-btn btn btn-md btn-default"
-                                ng-click="deleteExpense($event)">
-                            <span class="glyphicon glyphicon-trash"></span>
-                            </a>
-                        </td>
+                <div class="alert alert-info" ng-show="expenses.length == 0 && filterString">
+                    Nothing found for {{filterString}}
+                </div>
+                <table class="table expenses-table" ng-show="expenses.length">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Comment</th>
+                            <th class="zero-with"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="e in expenses"
+                            ng-class="editing ? 'editing' : ''"
+                            title="{{editing ? '' : 'Click to edit'}}"
+                            expense-view>
+                            <td ng-hide="editing">
+                                {{e.timestamp | date:'yyyy-MM-dd HH:mm'}}</td>
+                            <td ng-hide="editing">{{e.description}}</td>
+                            <td ng-hide="editing">{{e.amount | currency}}</td>
+                            <td ng-hide="editing">{{e.comment}}</td>
+                            <td ng-hide="editing" class="zero-width"><a class="delete-btn btn btn-md btn-default"
+                                    ng-click="deleteExpense($event)">
+                                <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            </td>
 
-                        <!-- edit view -->
-                        <td ng-show="editing">
-                            <input type='text' class="form-control" date-control
-                                   data-date-format="YYYY-MM-DD hh:mm"
-                                   value="{{e.timestamp | date:'yyyy-MM-dd HH:mm'}}"
-                                   edits="timestamp"/>
-                        <td ng-show="editing">
-                            <input class="form-control"
-                                   value="{{e.description}}"
-                                   edits="description"></td>
-                        <td ng-show="editing">
-                            <input class="form-control"
-                                   value="{{e.amount}}"
-                                   edits="amount" float-value></td>
-                        <td ng-show="editing">
-                            <input class="form-control"
-                                   value="{{e.comment}}"
-                                   edits="comment"></td>
-                        <td ng-show="editing">
-                            <a class="btn btn-md btn-default" ng-click="finishEdit($event)">
-                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"
-                                    ng-show="updating"></span><span
-                                    class="glyphicon glyphicon-check"
-                                    ng-hide="updating"></span></a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <div ng-show="expenses && !expenses.length && !filterString && !expensesLoading" class="alert alert-info">
-                You don't have any expenses yet.<br>
-                <a class="btn btn-md btn-default"
-                   ng-click="addExpense()"
-                   ng-disabled="addingExpense">Add your first expense</a>
+                            <!-- edit view -->
+                            <td ng-show="editing">
+                                <input type='text' class="form-control" date-control
+                                       data-date-format="YYYY-MM-DD hh:mm"
+                                       value="{{e.timestamp | date:'yyyy-MM-dd HH:mm'}}"
+                                       edits="timestamp"/>
+                            <td ng-show="editing">
+                                <input class="form-control"
+                                       value="{{e.description}}"
+                                       edits="description"></td>
+                            <td ng-show="editing">
+                                <input class="form-control"
+                                       value="{{e.amount}}"
+                                       edits="amount" float-value></td>
+                            <td ng-show="editing">
+                                <input class="form-control"
+                                       value="{{e.comment}}"
+                                       edits="comment"></td>
+                            <td ng-show="editing">
+                                <a class="btn btn-md btn-default" ng-click="finishEdit($event)">
+                                    <span
+                                        class="glyphicon glyphicon-check"></span></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div ng-show="expenses && !expenses.length && !filterString && !updating" class="alert alert-info">
+                    You don't have any expenses yet.<br>
+                    <a class="btn btn-md btn-default"
+                       ng-click="addExpense()"
+                       ng-disabled="addingExpense">Add your first expense</a>
+                </div>
+            </div>
+            <div class="col-md-12" ng-show="view == 'weekStats'">
+                <table class="table" ng-show="stats">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Total expenses</th>
+                            <th>Average expense</th>
+                            <th>Average per day</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="s in stats">
+                            <td>{{s.year}}</td>
+                            <td>{{s.week[0] | date:'yyyy-MM-dd'}}</td>
+                            <td>{{s.week[1] | date:'yyyy-MM-dd'}}</td>
+                            <td>{{s.totalExpenses}}</td>
+                            <td>{{s.averageExpense | currency}}</td>
+                            <td>{{s.total / 7 | currency}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
     <div id="user"></div>
 
-    <!-- datetime picker -->
+    <!-- datetime picker plugin -->
     <link rel="stylesheet" type="text/css" href="/assets/css/bootstrap-datetimepicker.min.css">
     <script type="text/javascript" src="/assets/js/jquery-2.1.1.min.js"></script>
     <script type="text/javascript" src="/assets/js/moment.min.js"></script>
@@ -147,6 +175,7 @@
     <script type="text/javascript" src="/assets/js/bootstrap/collapse.js"></script>
     <script type="text/javascript" src="/assets/js/bootstrap-datetimepicker.js"></script>
 
+    <!-- angular application module -->
     <script type="text/javascript" src="/assets/js/angular-resource.js"></script>
     <script type="text/javascript" src="/assets/js/app.js"></script>
 

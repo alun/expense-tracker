@@ -27,46 +27,31 @@ object GenTestData {
 
   def createTestUser(implicit session: JdbcProfile#Backend#Session) = {
     users.filter(_.email === "test@data.com").delete
-
-    val uid = nextId
-    users += User(uid, "test@data.com", password("test@data.com", "pwd"))
-    uid
+    val u = User(nextId, "test@data.com", password("test@data.com", "pwd"))
+    users += u
+    u
   }
 
-  def genRandExpenses(uid:ObjectId)(implicit dbSession: JdbcProfile#Backend#Session) {
+  def genRandExpenses(uid:ObjectId, years:Int = 1)(implicit dbSession: JdbcProfile#Backend#Session) {
     val yearMilliseconds = 52L * 7 * 24 * 60 * 60 * 1000
 
     def randInt(max:Int) = Random.nextInt(max)
-    def randTs = new java.sql.Timestamp(now.getTime - (Math.random() * yearMilliseconds).toLong)
+    def randTs = new java.sql.Timestamp(now.getTime - (Math.random() * years * yearMilliseconds).toLong)
     def words = "gift kauf expense shop auto house appartment transport taxi wife".split(" ").toList
     def randWord = words(randInt(words.size))
     def randSentence = (0 to randInt(3)).map(_ => randWord).mkString(" ")
 
-    for (_ <- 1 to 100) {
+    for (_ <- 1 to 10000) {
       expenses += Expense(nextId, uid, randTs, randSentence, BigDecimal(randInt(100000), 2), randSentence)
     }
   }
 
   def main(args:Array[String]) {
 
-    withMemDb { implicit dbSession =>
-      val uid = createTestUser
-      genRandExpenses(uid)
-
-      val week = SimpleFunction.unary[Timestamp, Int]("week")
-      val year = SimpleFunction.unary[Timestamp, Int]("year")
-
-      val q1 = (for {
-        e <- expenses if year(e.timestamp) === 2014 && e.ownerId === uid
-      } yield (week(e.timestamp), e.amount)).groupBy(_._1)
-
-      val q2 = (for {
-        (week, amount) <- q1
-      } yield (week, amount.map(_._2).avg, amount.map(_._2).sum)).sortBy(_._1.desc)
-
-      println {
-        q2.list
-      }
+    withRealDb { implicit dbSession =>
+      createSchemaOpt()
+      val user = createTestUser
+      genRandExpenses(user.id, 4)
     }
 
   }

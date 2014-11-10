@@ -184,9 +184,13 @@ object Api {
             e.ownerId == user.id
           } ?~ UnauthorizedRequest
         _ <- Full(()).filter(_ => data.removeExpense(expense) == 1) ?~ DatabaseError
-      } yield {
-        updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(expense))
-      }
+      } yield updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(expense))
+
+    case req @ GET(Path(Seg("api" :: "users" :: Id(userId) :: "expenses" :: "stats" :: Nil))) =>
+      for {
+        user <- authorize(req, userId)
+        stats = data.getWeekStats(user)
+      } yield updateSession(user) ~> jsonStringResponse(Serializer.toJsonString(stats))
 
     case Path(Seg(path @ "api" :: _)) =>
       Failure(s"Bad api call ${path.mkString("/")}")
