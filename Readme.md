@@ -15,7 +15,7 @@ implementing REST API and Web base UI.
 ## How to run
 
 - Install [SBT]
-- Run `sbt run`
+- Run `sbt run` in cloned repo dir
 - Wait while the project will start
 - Goto [http://localhost:8080/][LocalApp]
 - You should be able to register and start tracking your expenses
